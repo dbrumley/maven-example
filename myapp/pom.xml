@@ -31,7 +31,7 @@
         <configuration>
           <libraries>
             <library>
-              <type>static</type>
+              <type>executable</type>
               <narSystemPackage>com.forallsecure.myapp</narSystemPackage>
             </library>
           </libraries>
