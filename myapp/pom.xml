@@ -1,0 +1,86 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>com.forallsecure</groupId>
+  <artifactId>myapp</artifactId>
+  <version>1.0-SNAPSHOT</version>
+  <packaging>nar</packaging>
+
+  <!-- Standard dependencies for your project -->
+  <dependencies>
+    <!-- Example: Dependency on mylibrary -->
+    <dependency>
+      <groupId>com.forallsecure</groupId>
+      <artifactId>mylibrary</artifactId>
+      <version>1.0-SNAPSHOT</version>
+      <type>nar</type>
+    </dependency>
+    <!-- Add other dependencies as needed -->
+  </dependencies>
+
+  <build>
+    <plugins>
+      <!-- NAR plugin configuration -->
+      <plugin>
+        <groupId>com.github.maven-nar</groupId>
+        <artifactId>nar-maven-plugin</artifactId>
+        <version>3.3.0</version>
+        <extensions>true</extensions>
+        <configuration>
+          <libraries>
+            <library>
+              <type>executable</type>
+              <narSystemPackage>com.forallsecure.myapp</narSystemPackage>
+            </library>
+          </libraries>
+          <sources>
+            <!-- Main source files -->
+            <source>
+              <directory>${project.basedir}/src/main/cpp</directory>
+              <includes>
+                <include>**/*.c</include>
+              </includes>
+            </source>
+          </sources>
+          <includePaths>
+            <includePath>${project.basedir}/src/main/include</includePath>
+          </includePaths>
+          <testSources>
+
+            <testSource>
+              <directory>${project.basedir}/src/main/cpp</directory>
+              <includes>
+                <include>**/*.c</include>
+              </includes>
+            </testSource>
+
+            <testSource>
+              <directory>${project.basedir}/src/test/cpp</directory>
+              <includes>
+                <include>**/*.c</include>
+              </includes>
+            </testSource>
+
+          </testSources>
+          <testIncludePaths>
+            <testIncludePath>${project.basedir}/src/main/include</testIncludePath>
+          </testIncludePaths>
+          <!-- Configuration for test executables -->
+          <tests>
+            <test>
+              <link>
+                g++
+              </link>
+              <name>harness</name> <!-- Set your test executable name here -->
+              <type>executable</type>
+            </test>
+          </tests>
+        </configuration>
+      </plugin>
+      <!-- Other plugins as needed -->
+    </plugins>
+  </build>
+
+</project>
