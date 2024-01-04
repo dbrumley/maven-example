@@ -13,7 +13,7 @@ We'll simplify a bit here and assume just two repositories:
 * `myapp`: A maven project that uses `mylibrary` to build a self-contained app.
 
 Let's dive into how we did it, and how you can too. You can also check out our
-(Github repo)[https://github.com/dbrumley/maven-example] showing a
+[Github repo](https://github.com/dbrumley/maven-example) showing a
 full working example.
 
 
@@ -235,7 +235,7 @@ Segmentation fault
 ## Conclusion
 
 Figuring out Maven was a fun journey.  We've created a small example
-illustrating everything here at (https://github.com/dbrumley/maven-example)
+illustrating everything at [](https://github.com/dbrumley/maven-example)
 including:
 1. How to compile multiple repositories
 2. How to [specify a dependency between the two repositories](https://github.com/dbrumley/maven-example/blob/7c333d4a3230fd35ba5ce4b715cd86728b464026/myapp/pom.xml#L14), in this case
@@ -246,4 +246,3 @@ including:
 4. Testing with Mayhem, which only requires writing a simple configuration
    file. The result is immediate bug-finding Mayhem making!
 
-   
