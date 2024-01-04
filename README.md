@@ -172,9 +172,23 @@ You can add other files as well, as long as they don't conflict with the test
 names. If you have 4 files in `src/test/cpp/{main.c, util.c, test1.c,
 test2.c}` the executable `test1` will be built from `main.c`, `util.c`,  and
 `test1.c`, and  the executable `test2` will be built from `main.c`,
-`util.c`, and `test2.c`.  Again, Jef's [Github
-repo](https://github.com/dugilos/nar-test)  shows a full working example. 
+`util.c`, and `test2.c`.  
 
+In our case we're just writing one harness. The key is to make sure the source
+file name matches the name given here. We'll use `harness1`, and create `harness1.c`:
+```xml
+          <tests>
+            <test>
+              <name>harness1</name> <!-- Set your test executable name here -->
+              <link>static</link>
+              <run>true</run>
+              <args>
+                <arg>${project.basedir}/src/test/resources/42.test</arg>
+              </args>
+            </test>
+          </tests>
+
+```
 
 ### Step 4: Write and Run Your Tests
 
