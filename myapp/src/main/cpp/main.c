@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "myapp.h"
+#include "applib.h"
 
 int main(int argc, char *argv[])
 {

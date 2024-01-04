@@ -31,50 +31,41 @@
         <configuration>
           <libraries>
             <library>
-              <type>executable</type>
+              <type>static</type>
               <narSystemPackage>com.forallsecure.myapp</narSystemPackage>
             </library>
           </libraries>
-          <sources>
-            <!-- Main source files -->
-            <source>
-              <directory>${project.basedir}/src/main/cpp</directory>
-              <includes>
-                <include>**/*.c</include>
-              </includes>
-            </source>
-          </sources>
-          <includePaths>
-            <includePath>${project.basedir}/src/main/include</includePath>
-          </includePaths>
-          <testSources>
 
-            <testSource>
-              <directory>${project.basedir}/src/main/cpp</directory>
-              <includes>
-                <include>**/*.c</include>
-              </includes>
-            </testSource>
+          <cpp>
+            <options>
+              <!-- <option>...</option> -->
+            </options>
+            <testOptions>
+              <!-- testOptions are added to regular options for test compilation -->
+              <!-- <option>...</option> -->
+            </testOptions>
+          </cpp>
 
-            <testSource>
-              <directory>${project.basedir}/src/test/cpp</directory>
-              <includes>
-                <include>**/*.c</include>
-              </includes>
-            </testSource>
+          <linker>
+            <options>
+              <!-- No option if the library type is static and the "linker" is ar -->
+              <!-- <option>...</option> -->
+            </options>
+            <testOptions>
+              <!-- testOptions are added to regular options for test linking -->
+              <!-- <option>...</option> -->
+            </testOptions>
+          </linker>
 
-          </testSources>
-          <testIncludePaths>
-            <testIncludePath>${project.basedir}/src/main/include</testIncludePath>
-          </testIncludePaths>
           <!-- Configuration for test executables -->
           <tests>
             <test>
-              <link>
-                g++
-              </link>
-              <name>harness</name> <!-- Set your test executable name here -->
-              <type>executable</type>
+              <name>harness1</name> <!-- Set your test executable name here -->
+              <link>static</link>
+              <run>true</run>
+              <args>
+                <arg>10</arg>
+              </args>
             </test>
           </tests>
         </configuration>
