@@ -12,7 +12,9 @@ We'll simplify a bit here and assume just two repositories:
 * `mylibrary`: A maven project for building a shared library.
 * `myapp`: A maven project that uses `mylibrary` to build a self-contained app.
 
-Let's dive into how we did it, and how you can too.
+Let's dive into how we did it, and how you can too. You can also check out our
+(Github repo)[https://github.com/dbrumley/maven-example] showing a
+full working example.
 
 
 ## Dependency Hell and Maven to the Rescue
@@ -56,7 +58,8 @@ particular, two were important to understand for integrating new tests:
   repository on your machine. This isolates projects from one another, reducing
   conflicts and ensuring that dependencies for one project do not interfere
   with another. By default this is in the `.m2` directory in your home folder
-  (e.g., `~/.m2/repository` on Unix-like systems). 
+  (e.g., `~/.m2/repository` on Unix-like systems, or via the `M2_HOME`
+  environment variable). 
 
 * **Explicit Dependency Management**: Dependencies are defined in the project's
   `pom.xml` file, and Maven automatically downloads them from the repository.
@@ -125,17 +128,17 @@ with defaults.  In our case, we're going to add the harness code to the default
 `src/test/cpp`.
  
 The tricky part was figuring out how to modify `pom.xml`, as Maven + NAR has
-a far smaller community to learn from.  We finally found a (great
-writeup)[https://groups.google.com/g/maven-nar/c/-XSwh3l47Ow] and example from
-Jef Douglas on the NAR mailing list.  He even put together a (Github
-repo)[https://github.com/dugilos/nar-test] demonstrating the idea.
+a far smaller community to learn from.  We finally found a [great
+writeup](https://groups.google.com/g/maven-nar/c/-XSwh3l47Ow) and example from
+Jef Douglas on the NAR mailing list.  He even put together a [Github
+repo](https://github.com/dugilos/nar-test) demonstrating the idea.
 
 The key part for us was to understand that the test name in the `pom.xml` file
 are related to how you name your tests.  If you have the test named `test1`, by
 default this will refer to `src/test/cpp/test1.cpp`.  
 
 Jef gives a wonderful example. Suppose you have the configuration:
-```
+```xml
 <configuration>
 
     <tests>
@@ -169,8 +172,8 @@ You can add other files as well, as long as they don't conflict with the test
 names. If you have 4 files in `src/test/cpp/{main.c, util.c, test1.c,
 test2.c}` the executable `test1` will be built from `main.c`, `util.c`,  and
 `test1.c`, and  the executable `test2` will be built from `main.c`,
-`util.c`, and `test2.c`.  Again, his (Github
-repo)[https://github.com/dugilos/nar-test]  shows a full working example. 
+`util.c`, and `test2.c`.  Again, Jef's [Github
+repo](https://github.com/dugilos/nar-test)  shows a full working example. 
 
 
 ### Step 4: Write and Run Your Tests
@@ -179,7 +182,7 @@ With this all figured out, we added a new file `src/test/cpp/test1.c` as our
 harness. The harness needs to define `main`, and in our case it was a simple
 call to test the `conversion` function:
 
-```
+```c
 int main(int argc, char *argv[])
 {
   char buf[256];
@@ -192,16 +195,55 @@ int main(int argc, char *argv[])
 ```
 
 You can run this test with:
-```
+```bash
 mvn test
+```
+
+## Running with Mayhem
+
+Performing dynamic analysis with Mayhem is super easy after the harness is
+built. Just push the docker image, and specify a `Mayhemfile` saying how to
+check the application:
+
+```yaml
+image: dbrumley/maven-example:latest
+duration: 30
+project: maven-example
+target: harness1
+cmds:
+  - cmd: /build/myapp/target/test-nar/bin/amd64-Linux-gpp/harness1 @@
+```
+
+Mayhem finds a bug almost instantly.  The example `conversion` function converts from a
+double to a string, but doesn't do a bounds check properly:
+```c
+void conversion(celsius_t c, kelvin_t k, char *buf)
+{
+  sprintf(buf, "%lf celsius is %lf kelvin", c, k);
+  return;
+}
+```
+
+Mayhem finds an example input that crashes the program almost immediately:
+```bash
+-5486128870225019196831937724308948771408482030063034011714200761338748526848860953068154467189167438254023901036469529976518899427116188186866388367687561101259543253404734162913518640480693972842919781152860573843336048011515106063717714234487990508433623412693986670877298875553313862829328459030855680.000000 celsius is -9875031966405034554297487903756107788535267654113461221085561370409747348327949715522678040940501388857243021865645153957734018968809138736359499061837609982267177856128521493244333552865249151117255606075149032918004886420727190914691885622078382915180522142849176007579137975995964953092791226255540224.000000 kelvin
+qemu: uncaught target signal 11 (Segmentation fault) - core dumped
+Segmentation fault
+
 ```
 
 ## Conclusion
 
 Figuring out Maven was a fun journey.  We've created a small example
-illustrating everything here at [https://github.com/dbrumley/maven-example]
+illustrating everything here at (https://github.com/dbrumley/maven-example)
 including:
 1. How to compile multiple repositories
-2. How to (specify a dependency between the two repositories)[https://github.com/dbrumley/maven-example/blob/47aa3169a06adc626aee3190588ee6369b5b31a8/myapp/pom.xml#L12], in this case
+2. How to [specify a dependency between the two repositories](https://github.com/dbrumley/maven-example/blob/7c333d4a3230fd35ba5ce4b715cd86728b464026/myapp/pom.xml#L14), in this case
    `myapp` using `mylibrary`. 
-3. 
+3. Writing a harness and including it in the [build file](https://github.com/dbrumley/maven-example/blob/7c333d4a3230fd35ba5ce4b715cd86728b464026/myapp/pom.xml#L63). The TL;DR was that the
+   test name (e.g., `harness1`) corresponds to the C code name (e.g.,
+   `src/test/cpp/harness1.cpp`). 
+4. Testing with Mayhem, which only requires writing a simple configuration
+   file. The result is immediate bug-finding Mayhem making!
+
+   

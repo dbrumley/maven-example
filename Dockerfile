@@ -8,3 +8,4 @@ WORKDIR /build/mylibrary
 RUN mvn install
 WORKDIR /build/myapp
 RUN mvn compile
+RUN mvn test

@@ -1,0 +1,6 @@
+image: dbrumley/maven-example:latest
+duration: 30
+project: maven-example
+target: harness1
+cmds:
+  - cmd: /build/myapp/target/test-nar/bin/amd64-Linux-gpp/harness1 @@

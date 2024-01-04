@@ -64,7 +64,7 @@
               <link>static</link>
               <run>true</run>
               <args>
-                <arg>10</arg>
+                <arg>${project.basedir}/src/test/resources/42.test</arg>
               </args>
             </test>
           </tests>
