@@ -215,7 +215,8 @@ cmds:
 ```
 
 Mayhem finds a bug almost instantly.  The example `conversion` function converts from a
-double to a string, but doesn't do a bounds check properly:
+double to a string, but doesn't do a bounds check properly (recall we pass in a `char
+buf[256]` buf)
 ```c
 void conversion(celsius_t c, kelvin_t k, char *buf)
 {
