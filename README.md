@@ -102,16 +102,15 @@ In this project we focused on integrating directly with Maven + NAR.
 ## Step 1: Build the project as-is
 
 When faced with new software, a good first step is always to make sure you know
-how to compile it.   The Maven CLI `mvn` manages the overall process:
+how to compile it. The Maven CLI `mvn` manages the overall process:
 
 * **`mvn compile`** compiles the project, and puts the results (by default) in
   the `targets` directory.
 * **`mvn install`** will compile and install the project into the local Maven
   repository, by default in `~/.m2`.
-* **`mvn test`** will compile and run tests.  We'll use this feature to add our
-  dynamic analysis test harnesses.
 
-Fore more details, check the [Maven lifecycle](https://maven.apache.org/guides/introduction/introduction-to-the-lifecycle.html).
+Many other steps exist, but these two suffice for our purposes. For more details, check 
+the [Maven lifecycle](https://maven.apache.org/guides/introduction/introduction-to-the-lifecycle.html).
 
 ## Step 2: Decide how you will integrate new test harnesses
 
