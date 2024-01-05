@@ -65,9 +65,7 @@ particular, two were important to understand for integrating new tests:
   internet access.
 
 * **Local Repository**: Maven caches all downloaded dependencies in a local
-  repository on your machine. This isolates projects from one another, reducing
-  conflicts and ensuring that dependencies for one project do not interfere
-  with another. By default this is in the `.m2` directory in your home folder
+  repository on your machine. By default this is in the `.m2` directory in your home folder
   (e.g., `~/.m2/repository` on Unix-like systems, or via the `M2_HOME`
   environment variable). 
 
