@@ -11,6 +11,7 @@ We'll simplify a bit here and assume just two repositories:
 
 * `mylibrary`: A maven project for building a shared library.
 * `myapp`: A maven project that uses `mylibrary` to build a self-contained app.
+* `myharness`: A maven project that uses `mylibrary` to build a harness that Mayhem can use.
 
 Let's dive into how we did it, and how you can too. You can also check out our
 [Github repo](https://github.com/dbrumley/maven-example) showing a
@@ -23,8 +24,9 @@ Every developer knows about "dependency hell." You might be experiencing
 dependency hell when your software has: 
 
 1. **Complex Dependency Trees**: Software projects often rely on numerous
-   libraries, each of which may have its own set of dependencies. This creates
-   a complex tree of dependencies that can be difficult to resolve and manage. 
+   libraries, each of which may have its own set of dependencies (transitive 
+   dependencies). This creates a complex tree of dependencies that can be 
+   difficult to resolve and manage. 
     
 2. **Version Conflicts**: Different parts of a project or different projects on
    the same system might require different versions of the same dependency.
@@ -47,14 +49,22 @@ dependency hell when your software has:
 Maven helps avoid some of these problems. While non-standard in C/C++, it
 seemed to work out nicely for this customers use case. Maven's primary use case
 is Java, where it's well known for its project management, dependency
-management, and build lifecycle capabilities.  Maven uses a Project Object
+management, and build lifecycle capabilities. Maven uses a Project Object
 Model (POM) in an XML file (`pom.xml`) to describe the project configuration,
-dependencies, build order, and required plugins.  
+dependencies, build order, and required plugins. Each project has a unique 
+combination of `groupId` and `artifactId` which is used to reference the project
+as a dependency.
 
 This project chose Maven to help avoid some dependency hell issues. In
 particular, two were important to understand for integrating new tests:
 
-* **Local Repository**: Maven stores all downloaded dependencies in a local
+* **Centralized Repository**: Maven is designed around centralized binary
+  repositories. The default `https://mvnrepository.com` hosts terabytes of
+  built open source projects. An organization can host their own internal
+  repository as well, so Maven can work in environments that don't have public
+  internet access.
+
+* **Local Repository**: Maven caches all downloaded dependencies in a local
   repository on your machine. This isolates projects from one another, reducing
   conflicts and ensuring that dependencies for one project do not interfere
   with another. By default this is in the `.m2` directory in your home folder
@@ -101,117 +111,44 @@ how to compile it.   The Maven CLI `mvn` manages the overall process:
 * **`mvn test`** will compile and run tests.  We'll use this feature to add our
   dynamic analysis test harnesses.
 
+Fore more details, check the [Maven lifecycle](https://maven.apache.org/guides/introduction/introduction-to-the-lifecycle.html).
+
 ## Step 2: Decide how you will integrate new test harnesses
 
 Dynamic analysis typically requires, like unit and functional tests, building a
-test harness.  A test harness includes code for mocks, test drivers, and any
+test harness. A test harness includes code for mocks, test drivers, and any
 setup that needs to be done before performing the actual test.
 
 There are two ways to do this:
-1. Add new code to the git repo.  If you can't add code to the central repo, a
-   common approach is to maintain a fork with your local additions. We took
-   this approach.
-2. Create a new repository with just the harnesses. This typically works ok for
-   libraries, but is less generic.  It is generally only used when the team
-   writing the code (e.g., the security team) has little interaction with the
-   developers and wants to keep all their tests completely separate.
+1. Create a new Maven project with just the harnesses that import the system under
+  test via Maven dependency management. This typically works great for libraries where
+  the harness can use the unmodified objects being built as-is.
+2. Sometimes, code you want to test is contained in an executable (not a library). In 
+  this case, new harness code would need to be added directly to the Maven module that contains 
+  the system under test. If you can't add code to the central repo, a common approach is to 
+  maintain a fork with your local additions. We took this approach.
 
+In this case, the interface the library exports suffices and we'll do (1).
 
-In this case we'll do (1).
-
-### Step 3: Modify the `pom.xml` file to include your new code.
+### Step 3: Create a `myharness` module.
 
 Maven has a very opinionated default directory structure.  It expects code in
 `src/main/cpp` for C++ code, includes in `src/main/include`, and tests in
 `src/test/cpp`.  While you can override these, it's often easier just to work
 with defaults.  In our case, we're going to add the harness code to the default
-`src/test/cpp`.
- 
-The tricky part was figuring out how to modify `pom.xml`, as Maven + NAR has
-a far smaller community to learn from.  We finally found a [great
-writeup](https://groups.google.com/g/maven-nar/c/-XSwh3l47Ow) and example from
-Jef Douglas on the NAR mailing list.  He even put together a [Github
-repo](https://github.com/dugilos/nar-test) demonstrating the idea.
+`src/main/cpp` in a new Maven project.
 
-The key part for us was to understand that the test name in the `pom.xml` file
-are related to how you name your tests.  If you have the test named `test1`, by
-default this will refer to `src/test/cpp/test1.cpp`.  
+We also create a new `pom.xml` in the `myharness` module and add the `myharness` 
+module to the parent `pom.xml`.
 
-Jef gives a wonderful example. Suppose you have the configuration:
-```xml
-<configuration>
+### Step 4: Write and Run Your Tests.
 
-    <tests>
-
-        <test>
-            <name>test1</name>
-            <link>shared</link>
-            <run>true</run>
-        </test>
-
-        <test>
-            <name>test2</name>
-            <link>shared</link>
-            <run>true</run>
-            <args>
-                <arg>param1</arg>
-                <arg>param2</arg>
-            </args>
-        </test>
-
-    </tests>
-
-</configuration>
-```
-
-The configuration above will build 2 executables, `test1` and `test2`, each
-executable will be built with all the test source files whose names don't
-correspond to the names of other tests. 
-
-You can add other files as well, as long as they don't conflict with the test
-names. If you have 4 files in `src/test/cpp/{main.c, util.c, test1.c,
-test2.c}` the executable `test1` will be built from `main.c`, `util.c`,  and
-`test1.c`, and  the executable `test2` will be built from `main.c`,
-`util.c`, and `test2.c`.  
-
-In our case we're just writing one harness. The key is to make sure the source
-file name matches the name given here. We'll use `harness1`, and create `harness1.c`:
-```xml
-          <tests>
-            <test>
-              <name>harness1</name> <!-- Set your test executable name here -->
-              <link>static</link>
-              <run>true</run>
-              <args>
-                <arg>${project.basedir}/src/test/resources/42.test</arg>
-              </args>
-            </test>
-          </tests>
-
-```
-
-### Step 4: Write and Run Your Tests
-
-With this all figured out, we added a new file `src/test/cpp/test1.c` as our
+With this all figured out, we added a new file `src/main/cpp/main.c` as our
 harness. The harness needs to define `main`, and in our case it was a simple
-call to test the `conversion` function:
-
-```c
-int main(int argc, char *argv[])
-{
-  char buf[256];
-  double c = atof(argv[1]);
-  double k = CelsiusToFahrenheit(c);
-  conversion(c, k, buf);
-
-  return 0;
-}
+call to test the `CelsiusToFahrenheit` function.
 ```
 
-You can run this test with:
-```bash
-mvn test
-```
+You can compile this harness with `./mvnw install` (local Maven) `docker build --platform=linux/amd64 .` (dockerized Maven).
 
 ## Running with Mayhem
 
@@ -219,18 +156,24 @@ Performing dynamic analysis with Mayhem is super easy after the harness is
 built. Just push the docker image, and specify a `Mayhemfile` saying how to
 check the application:
 
+Build the Docker image so C++ can be compiled
+```bash
+docker build --platform=linux/amd64 . -t dbrumley/maven-example:latest
+docker push $MAYHEM_REPOSITORY/dbrumley/maven-example:latest
+```
+
 ```yaml
-image: dbrumley/maven-example:latest
+image: $MAYHEM_REPOSITORY/dbrumley/maven-example:latest
 duration: 30
 project: maven-example
 target: harness1
 cmds:
-  - cmd: /build/myapp/target/test-nar/bin/amd64-Linux-gpp/harness1 @@
+  - cmd: /myharness @@
 ```
 
 Mayhem finds a bug almost instantly.  The example `conversion` function converts from a
 double to a string, but doesn't do a bounds check properly (recall we pass in a `char
-buf[256]` buf)
+buf[...]` buf)
 ```c
 void conversion(celsius_t c, kelvin_t k, char *buf)
 {
@@ -252,12 +195,10 @@ Segmentation fault
 Figuring out Maven was a fun journey.  We've created a small example
 illustrating everything at [](https://github.com/dbrumley/maven-example)
 including:
-1. How to compile multiple repositories
-2. How to [specify a dependency between the two repositories](https://github.com/dbrumley/maven-example/blob/7c333d4a3230fd35ba5ce4b715cd86728b464026/myapp/pom.xml#L14), in this case
-   `myapp` using `mylibrary`. 
-3. Writing a harness and including it in the [build file](https://github.com/dbrumley/maven-example/blob/7c333d4a3230fd35ba5ce4b715cd86728b464026/myapp/pom.xml#L63). The TL;DR was that the
-   test name (e.g., `harness1`) corresponds to the C code name (e.g.,
-   `src/test/cpp/harness1.cpp`). 
+1. How to compile multiple Maven projects
+2. How to [specify a dependency between the two Maven projects](https://github.com/dbrumley/maven-example/blob/7c333d4a3230fd35ba5ce4b715cd86728b464026/myapp/pom.xml#L14), in this case
+   `myapp` using `mylibrary` and `myharness` using `mylibrary`. 
+3. Writing a harness and including it in the [build file](https://github.com/dbrumley/maven-example/pom.xml).. 
 4. Testing with Mayhem, which only requires writing a simple configuration
    file. The result is immediate bug-finding Mayhem making!
 

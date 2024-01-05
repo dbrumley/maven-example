@@ -11,4 +11,6 @@ double FahrenheitToCelsius(double fahrenheit);
 double CelsiusToKelvin(double celsius);
 double KelvinToCelsius(double kelvin);
 
+void conversion(celsius_t c, kelvin_t k, char *buf);
+
 #endif

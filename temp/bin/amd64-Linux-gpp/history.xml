@@ -1,0 +1,9 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<history>
+   <processor signature="12 -L/build/myharness/target/nar/mylibrary-1.0-SNAPSHOT-amd64-Linux-gpp-static/lib/amd64-Linux-gpp/static -lmylibrary-1.0-SNAPSHOT -fexceptions -lstdc++">
+      <target file="myharness" lastModified="18cd6f304da">
+         <source file="../../../mylibrary-1.0-SNAPSHOT-amd64-Linux-gpp-static/lib/amd64-Linux-gpp/static/libmylibrary-1.0-SNAPSHOT.a" lastModified="18cd6f3029a"/>
+         <source file="../../../obj/amd64-Linux-gpp/main.880f938a.o" lastModified="18cd6eee909"/>
+      </target>
+   </processor>
+</history>

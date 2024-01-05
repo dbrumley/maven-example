@@ -1,4 +1,5 @@
 #include "temperature.h"
+#include <stdio.h>
 
 double CelsiusToFahrenheit(double celsius)
 {
@@ -18,4 +19,10 @@ double CelsiusToKelvin(double celsius)
 double KelvinToCelsius(double kelvin)
 {
   return kelvin - 273.15;
+}
+
+void conversion(celsius_t c, kelvin_t k, char *buf)
+{
+  sprintf(buf, "%lf celsius is %lf kelvin", c, k);
+  return;
 }
