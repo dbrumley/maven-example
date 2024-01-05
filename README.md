@@ -56,7 +56,7 @@ combination of `groupId` and `artifactId` which is used to reference the project
 as a dependency.
 
 This project chose Maven to help avoid some dependency hell issues. In
-particular, two were important to understand for integrating new tests:
+particular, three were important to understand for integrating new tests:
 
 * **Centralized Repository**: Maven is designed around centralized binary
   repositories. The default `https://mvnrepository.com` hosts terabytes of
