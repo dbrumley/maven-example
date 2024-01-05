@@ -3,4 +3,4 @@ duration: 30
 project: maven-example
 target: harness1
 cmds:
-  - cmd: /build/myharness/target/nar/myharness-1.0-SNAPSHOT-amd64-Linux-gpp-executable/bin/amd64-Linux-gpp/myharness @@
+  - cmd: /myharness @@
