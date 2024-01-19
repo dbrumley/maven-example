@@ -138,7 +138,7 @@ with defaults.  In our case, we're going to add the harness code to the default
 We also create a new `pom.xml` in the `myharness` module and add the `myharness` 
 module to the parent `pom.xml`.
 
-### Step 4: Write and Run Your Tests.
+### Step 4: Write and Run Your Harness.
 
 With this all figured out, we added a new file `src/main/cpp/main.c` as our
 harness. The harness needs to define `main`, and in our case it was a simple
@@ -186,6 +186,71 @@ qemu: uncaught target signal 11 (Segmentation fault) - core dumped
 Segmentation fault
 
 ```
+
+### Bonus: Unit testing your harness (running tests with the nar plugin)
+As anywhere in software development, we like unit tests. They can help us verify 
+the harness is working how it should without having to run it manually.
+
+The tricky part was figuring out how to modify `pom.xml`, as Maven + NAR has
+a far smaller community to learn from.  We finally found a [great
+writeup](https://groups.google.com/g/maven-nar/c/-XSwh3l47Ow) and example from
+Jef Douglas on the NAR mailing list.  He even put together a [Github
+repo](https://github.com/dugilos/nar-test) demonstrating the idea.
+
+The key part for us was to understand that the test name in the `pom.xml` file
+are related to how you name your tests.  If you have the test named `test1`, by
+default this will refer to `src/test/cpp/test1.cpp`.  
+
+Jef gives a wonderful example. Suppose you have the configuration:
+```xml
+<configuration>
+
+    <tests>
+
+        <test>
+            <name>test1</name>
+            <link>shared</link>
+            <run>true</run>
+        </test>
+
+        <test>
+            <name>test2</name>
+            <link>shared</link>
+            <run>true</run>
+            <args>
+                <arg>param1</arg>
+                <arg>param2</arg>
+            </args>
+        </test>
+
+    </tests>
+
+</configuration>
+```
+
+The configuration above will build 2 executables, `test1` and `test2`, each
+executable will be built with all the test source files whose names don't
+correspond to the names of other tests. 
+
+You can add other files as well, as long as they don't conflict with the test
+names. If you have 4 files in `src/test/cpp/{main.c, util.c, test1.c,
+test2.c}` the executable `test1` will be built from `main.c`, `util.c`,  and
+`test1.c`, and  the executable `test2` will be built from `main.c`,
+`util.c`, and `test2.c`.  
+
+In our case we're just writing one harness. The key is to make sure the source
+file name matches the name given here. We'll use `harness1`, and create `harness1.c`:
+```xml
+          <tests>
+            <test>
+              <name>harness1</name> <!-- Set your test executable name here -->
+              <link>static</link>
+              <run>true</run>
+              <args>
+                <arg>${project.basedir}/src/test/resources/42.test</arg>
+              </args>
+            </test>
+          </tests>
 
 ## Conclusion
 
