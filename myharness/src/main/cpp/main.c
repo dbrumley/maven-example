@@ -2,7 +2,7 @@
 #include <fcntl.h>
 #include <stdio.h>
 
-#include "applib.h"
+#include "temperature.h"
 
 int main(int argc, char *argv[])
 {

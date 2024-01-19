@@ -4,7 +4,7 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>com.forallsecure</groupId>
-  <artifactId>myapp</artifactId>
+  <artifactId>myharness</artifactId>
   <version>1.0-SNAPSHOT</version>
   <packaging>nar</packaging>
 
@@ -22,9 +22,7 @@
 
   <build>
     <plugins>
-      <!-- NAR plugin configuration -->
       <plugin>
-        
         <groupId>com.github.maven-nar</groupId>
         <artifactId>nar-maven-plugin</artifactId>
         <version>3.3.0</version>
@@ -33,35 +31,11 @@
           <libraries>
             <library>
               <type>executable</type>
-              <narSystemPackage>com.forallsecure.myapp</narSystemPackage>
+              <narSystemPackage>com.forallsecure.myharness</narSystemPackage>
             </library>
           </libraries>
-
-          <cpp>
-            <options>
-              <!-- <option>...</option> -->
-            </options>
-            <testOptions>
-              <!-- testOptions are added to regular options for test compilation -->
-              <!-- <option>...</option> -->
-            </testOptions>
-          </cpp>
-
-          <linker>
-            <options>
-              <!-- No option if the library type is static and the "linker" is ar -->
-              <!-- <option>...</option> -->
-            </options>
-            <testOptions>
-              <!-- testOptions are added to regular options for test linking -->
-              <!-- <option>...</option> -->
-            </testOptions>
-          </linker>
-
         </configuration>
       </plugin>
-      <!-- Other plugins as needed -->
     </plugins>
   </build>
-
 </project>

@@ -1,7 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "applib.h"
+
+#include "temperature.h"
 
 int main(int argc, char *argv[])
 {

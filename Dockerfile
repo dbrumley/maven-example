@@ -1,11 +1,13 @@
 FROM debian:stable
 RUN apt-get update && apt-get install -y maven vim build-essential gdb tree
-WORKDIR /build
-COPY mylibrary mylibrary
-COPY myapp myapp
 
-WORKDIR /build/mylibrary
+WORKDIR /build
+
+COPY myapp myapp
+COPY mylibrary mylibrary
+COPY myharness myharness
+COPY pom.xml .
+
 RUN mvn install
-WORKDIR /build/myapp
-RUN mvn compile
-RUN mvn test
+
+COPY /build/myharness/target/nar/myharness-1.0-SNAPSHOT-amd64-Linux-gpp-executable/bin/amd64-Linux-gpp/myharness /myharness
