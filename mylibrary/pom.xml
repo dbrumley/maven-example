@@ -19,7 +19,7 @@
           <libraries>
             <library>
               <type>static</type>
-              <narSystemPackage>com.forallsecure.baselib</narSystemPackage>
+              <!-- <narSystemPackage>com.forallsecure.baselib</narSystemPackage> -->
             </library>
           </libraries>
         </configuration>

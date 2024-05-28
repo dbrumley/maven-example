@@ -9,7 +9,8 @@ typically used for Java.
 The project was a large code base, split into multiple different repositories.
 We'll simplify a bit here and assume just two repositories: 
 
-* `mylibrary`: A maven project for building a shared library.
+* `mylibrary`: A maven project for building a shared library. This builds as a
+  static (`.a`) library. 
 * `myapp`: A maven project that uses `mylibrary` to build a self-contained app.
 * `myharness`: A maven project that uses `mylibrary` to build a harness that Mayhem can use.
 
@@ -27,12 +28,12 @@ dependency hell when your software has:
    libraries, each of which may have its own set of dependencies (transitive 
    dependencies). This creates a complex tree of dependencies that can be 
    difficult to resolve and manage. 
-    
+   
 2. **Version Conflicts**: Different parts of a project or different projects on
    the same system might require different versions of the same dependency.
    Managing these version conflicts manually can be challenging and
    time-consuming. 
-    
+   
 3. **Lack of Isolation**: In `./configure && make` scenarios, dependencies are
    typically installed system-wide. This lack of isolation can lead to
    conflicts between projects, where one project's dependencies interfere with
@@ -83,11 +84,11 @@ ecosystem. There are three ways to do this:
   projects, Maven handles the overall project management, dependency
   resolution, and invokes the NAR plugin for the C++ specific build steps like
   compilation and linking. 
-    
+  
 - **Ant for C++ Builds**: If you prefer Ant, you can use it independently for
   C++ projects, scripting the entire build process in the `build.xml` file.
   This approach is more manual compared to Maven but offers flexibility. 
-     
+  
 - **Combining Maven and Ant**: In some complex scenarios, you might see Maven
   and Ant being used together. For instance, Maven could be used for its
   superior dependency management and project structuring, while Ant scripts are
@@ -108,7 +109,15 @@ how to compile it. The Maven CLI `mvn` manages the overall process:
   repository, by default in `~/.m2`.
 
 Many other steps exist, but these two suffice for our purposes. For more details, check 
-the [Maven lifecycle](https://maven.apache.org/guides/introduction/introduction-to-the-lifecycle.html).
+the [Maven
+lifecycle](https://maven.apache.org/guides/introduction/introduction-to-the-lifecycle.html).
+
+In this project, the following will happen:
+ - `myapp` will build to a native executable in
+   `./myapp/target/nar/myapp-1.0-SNAPSHOT-amd64-Linux-gpp-executable/bin/amd64-Linux-gpp/myapp`.
+   Similarly for the other directories.
+- The `install` command will install all components as NAR files in `$HOME/.m2/repository/com/forallsecure/myapp/1.0-SNAPSHOT/` 
+
 
 ## Step 2: Decide how you will integrate new test harnesses
 
@@ -118,12 +127,12 @@ setup that needs to be done before performing the actual test.
 
 There are two ways to do this:
 1. Create a new Maven project with just the harnesses that import the system under
-  test via Maven dependency management. This typically works great for libraries where
-  the harness can use the unmodified objects being built as-is.
+    test via Maven dependency management. This typically works great for libraries where
+    the harness can use the unmodified objects being built as-is.
 2. Sometimes, code you want to test is contained in an executable (not a library). In 
-  this case, new harness code would need to be added directly to the Maven module that contains 
-  the system under test. If you can't add code to the central repo, a common approach is to 
-  maintain a fork with your local additions. We took this approach.
+    this case, new harness code would need to be added directly to the Maven module that contains 
+    the system under test. If you can't add code to the central repo, a common approach is to 
+    maintain a fork with your local additions. We took this approach.
 
 In this case, the interface the library exports suffices and we'll do (1).
 
@@ -143,7 +152,6 @@ module to the parent `pom.xml`.
 With this all figured out, we added a new file `src/main/cpp/main.c` as our
 harness. The harness needs to define `main`, and in our case it was a simple
 call to test the `CelsiusToFahrenheit` function.
-```
 
 You can compile this harness with `./mvnw install` (local Maven) `docker build --platform=linux/amd64 .` (dockerized Maven).
 
@@ -158,6 +166,8 @@ Build the Docker image so C++ can be compiled
 docker build --platform=linux/amd64 . -t dbrumley/maven-example:latest
 docker push $MAYHEM_REPOSITORY/dbrumley/maven-example:latest
 ```
+
+And here is the `Mayhemfile`:
 
 ```yaml
 image: $MAYHEM_REPOSITORY/dbrumley/maven-example:latest
@@ -182,17 +192,15 @@ void conversion(celsius_t c, kelvin_t k, char *buf)
 Mayhem finds an example input that crashes the program almost immediately:
 ```bash
 -5486128870225019196831937724308948771408482030063034011714200761338748526848860953068154467189167438254023901036469529976518899427116188186866388367687561101259543253404734162913518640480693972842919781152860573843336048011515106063717714234487990508433623412693986670877298875553313862829328459030855680.000000 celsius is -9875031966405034554297487903756107788535267654113461221085561370409747348327949715522678040940501388857243021865645153957734018968809138736359499061837609982267177856128521493244333552865249151117255606075149032918004886420727190914691885622078382915180522142849176007579137975995964953092791226255540224.000000 kelvin
-qemu: uncaught target signal 11 (Segmentation fault) - core dumped
 Segmentation fault
 
 ```
 
 ### Bonus: Unit testing your harness (running tests with the nar plugin)
-As anywhere in software development, we like unit tests. They can help us verify 
-the harness is working how it should without having to run it manually.
 
-The tricky part was figuring out how to modify `pom.xml`, as Maven + NAR has
-a far smaller community to learn from.  We finally found a [great
+We can add the added Mayhem test coverage so that it runs under Maven as well
+as a unit test.  However, figuring out what to modify in the build is tricky,
+especially in figuring out how to modify `pom.xml`.  We finally found a [great
 writeup](https://groups.google.com/g/maven-nar/c/-XSwh3l47Ow) and example from
 Jef Douglas on the NAR mailing list.  He even put together a [Github
 repo](https://github.com/dugilos/nar-test) demonstrating the idea.
@@ -240,8 +248,9 @@ test2.c}` the executable `test1` will be built from `main.c`, `util.c`,  and
 
 In our case we're just writing one harness. The key is to make sure the source
 file name matches the name given here. We'll use `harness1`, and create `harness1.c`:
-```xml
-          <tests>
+
+```
+       <tests>
             <test>
               <name>harness1</name> <!-- Set your test executable name here -->
               <link>static</link>
@@ -251,6 +260,9 @@ file name matches the name given here. We'll use `harness1`, and create `harness
               </args>
             </test>
           </tests>
+```
+
+
 
 ## Conclusion
 
@@ -262,5 +274,73 @@ including:
    `myapp` using `mylibrary` and `myharness` using `mylibrary`. 
 3. Writing a harness and including it in the [build file](https://github.com/dbrumley/maven-example/pom.xml).. 
 4. Testing with Mayhem, which only requires writing a simple configuration
-   file. The result is immediate bug-finding Mayhem making!
+   file. The result is immediate bug-finding Mayhem making!   
+   
+   
+
+## Appendix: Other Notes
+
+### Q: How do you build just one subproject?
+
+A: Suppose you have in your `pom.xml` a list of projects with `myapp` as one of
+them. Run `mvn --pl myapp compile`
+
+### Q: How do you invoke NAR to compile directly?
+
+A: Using a NAR goal, such as:  `mvn compile`.  If you want to specifically
+invoke the NAR target, `mvn
+com.github.maven-nar:nar-maven-plugin:3.3.0:nar-compile`.
+
+### Q: I see installed a .nar file; how do I get the actual code?
+
+A: In a target that uses it, run: `mvn
+com.github.maven-nar:nar-maven-plugin:3.3.0:nar-unpack`. This will unpack the
+installed dependency nar file into `target`
+
+### Q: How do I output a logfile?
+
+A: Run `mvn -l <logfile> <cmd>` to output to `<logfile>`.  Colors are disabled. 
+
+### Q: How do I change to clang?
+
+A: There are two ways. If `pom.xml` has a property like
+<cxx.compiler>g++</cxx.compiler>, you can override it by running Maven with:
+
+```bash
+mvn compile -Dcxx.compiler=clang++
+```
+
+If uses env variables, try:
+
+```bash
+export CXX=clang++
+mvn compile
+```
+
+One could also create a new profile and use that profile flags, e.g., for the `clang-profile`:
+
+```bash
+mvn compile -Pclang-profile
+```
+
+### Unsorted
+
+When starting out with an existing repo, here is a general workflow:
+
+1. Configure the `MAVEN_HOME` and `PATH` environment variables.
+2. find `pom.xml` and the `<modules>` section.
+3. Determine which `<build><plugins>` are being used for C++.
+4. Full build: `mvn clean install`
+5. if `pom.xml` has a property like <cxx.compiler>g++</cxx.compiler>, you can override it by running Maven with:
+```bash
+mvn compile -Dcxx.compiler=clang++
+```
+If uses env variables, try:
+```bash
+export CXX=clang++
+mvn compile
+```
+
+
+6. To run wrappers, e.g., `./mvnw clean install`
 
